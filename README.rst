@@ -138,21 +138,10 @@ Environment 1:
 * Python = 3.11.0, CUDA = 12.1
 * Dependencies: anndata=0.10.6, leidenalg=0.9.1, lightly-1.5.1, lightning_bolts=0.7.0, matplotlib=3.8.3, neptune=1.9.1, numpy=1.26.4, pandas=1.5.3, python_igraph=0.10.4, pytorch-lightning=1.7.7, scanpy=1.9.8, scikit_learn=1.4.1, scipy=1.12.0, seaborn=0.13.2, torch=2.2.1, torchvision=0.17.1, umap_learn=0.5.5
 
-Docker Image
-------------
-
-A GPU-enabled docker image is available from the Google Container Registry (GCR) as:
-
-``us.gcr.io/broad-dsde-methods/tissuemosaic:latest``
-
-Older versions are available at the same location, for example as
-
-``us.gcr.io/broad-dsde-methods/tissuemosaic:0.0.5``
-
 How to run
 ----------
 
-Please refer to the documentation (https://tissue-mosaic.readthedocs.io/) for a quick start tutorial. Running this tutorial with a trained model takes approximately 1.5 hours with a 4 core system. 
+Please refer to the documentation (https://tissuemosaic.readthedocs.io/) for a quick start tutorial. Running this tutorial with a trained model takes approximately 1.5 hours with a 4 core system. 
 
 There are 3 ways to run the code:
 
