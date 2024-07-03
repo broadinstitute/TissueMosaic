@@ -124,7 +124,7 @@ Finally install *Tissue Mosaic* and its dependencies:
 .. code-block::
 
     git clone https://github.com/broadinstitute/TissueMosaic.git
-    cd tissuemosaic
+    cd TissueMosaic
     pip install -r requirements.txt
     pip install .
 
@@ -175,11 +175,11 @@ by Chen et al. <https://pubmed.ncbi.nlm.nih.gov/34731600/>`_) and untar it in th
     mkdir -p ./testis_anndata
     tar -xzf slideseq_testis_anndata_h5ad.tar.gz -C /testis_anndata.
 
-Next, navigate to the "tissuemosaic/run" directory and train the model (this will take about 3 hours for 500 epochs with a single Nvidia RTX 4090 GPU):
+Next, navigate to the "TissueMosaic/run" directory and train the model (this will take about 3 hours for 500 epochs with a single Nvidia RTX 4090 GPU):
 
 .. code-block::
 
-    cd tissuemosaic/run
+    cd TissueMosaic/run
     python main_1_train_ssl.py --config config_dino_ssl.yaml --data_folder testis_anndata --ckpt_out dino_testis.pt
 
     # or alternatively
@@ -233,7 +233,7 @@ you can submit a run as follow:
 
 .. code-block::
 
-    cd tissuemosaic/run
+    cd TissueMosaic/run
     ./submit_neptune_ml.sh neptune_ml.wdl --py main_1_train_ssl.py --wdl WDL_parameters.json --ml config_dino_ssl.yaml
 
     # or alternatively

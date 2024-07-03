@@ -6,12 +6,12 @@ TissueMosaic for training a model, featurizing the anndata, regressing
 gene expression, and performing conditional motif enrichment.
 
 First download the example testis anndata files: https://drive.google.com/file/d/1buvC7H8-EsyLrniMCre7Y7PZLu8zw8h2/view?usp=sharing
-into a sub-folder 'tutorial/testis_anndata/' in the 'tissuemosaic/run' directory.
+into a sub-folder 'tutorial/testis_anndata/' in the 'TissueMosaic/run' directory.
 
 Train model
 ^^^^^^^^^^^
 
-Next, navigate to the “tissuemosaic/run” directory and run the
+Next, navigate to the “TissueMosaic/run” directory and run the
 following command in the console to train a TissueMosaic model:
 
 .. code:: ipython3
