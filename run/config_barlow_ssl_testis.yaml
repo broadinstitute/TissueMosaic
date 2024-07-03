@@ -1,0 +1,96 @@
+# general 
+random_seed: 1
+neptune_project: cellarium/tissue-mosaic
+batch_size_per_gpu: 256
+check_val_every_n_epoch: 2
+checkpoint_interval_minutes: 25
+max_time_minutes: 1440
+gradient_clip_algorithm: value
+gradient_clip_val: 0.5
+initialization_type: scratch
+remote_logging: true
+# gpus: 2 update with the number of GPUs available on your system
+precision: 16
+num_workers: 4
+# debugging options
+profiler: passthrough
+overfit_batches: 0
+detect_anomaly: false
+deterministic: false
+
+# validation
+val_iomin_threshold: 0.0
+
+# architecture
+ssl_model: barlow
+backbone_type: resnet34
+image_in_ch: 9
+head_hidden_chs:
+- 512
+- 512
+head_out_ch: 512
+
+# loss
+lambda_off_diagonal: 0.005
+
+# optimizers
+optimizer_type: adam
+min_learning_rate: 1.0E-5
+max_learning_rate: 5.0E-4
+min_weight_decay: 0.0
+max_weight_decay: 0.0
+warm_up_epochs: 100
+warm_down_epochs: 100
+max_epochs: 1000
+
+# dataset
+# data_folder: update with the path to the folder with the anndata.h5ad files
+n_crops_for_tissue_test: 1000
+n_crops_for_tissue_train: 1000
+n_element_min_for_crop: 200
+n_neighbours_moran: 6
+metadata_to_classify: null
+metadata_to_regress: null
+x_key: x
+y_key: y
+#category_key: cell_type
+category_keys: ['ES','Endothelial','Leydig','Macrophage','Myoid','RS','SPC','SPG','Sertoli']
+categories_to_channels: {
+        'ES': 0, 
+        'Endothelial': 1, 
+        'Leydig': 2, 
+        'Macrophage': 3, 
+        'Myoid': 4, 
+        'RS': 5, 
+        'SPC': 6, 
+        'SPG': 7, 
+        'Sertoli': 8
+}
+
+# transform
+pixel_size: 4.0
+n_global_crops: 2  # used only for DINO
+n_local_crops: 2  # used only for DINO
+global_size: 96  # size (in pixel) of the global crop
+local_size: 64  # size (in pixel) of the local crop, only used for DINO
+global_scale:
+- 0.8
+- 1.0
+local_scale:
+- 0.5
+- 0.8
+drop_channel_prob: 0.2
+drop_channel_relative_freq: null
+drop_spot_prob:
+- 0.1
+- 0.2
+- 0.3
+global_intensity:
+- 0.8
+- 1.2
+occlusion_fraction:
+- 0.1
+- 0.3
+rasterize_sigmas:
+- 1.0
+- 1.5

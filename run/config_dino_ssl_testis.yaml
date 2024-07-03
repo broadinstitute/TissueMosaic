@@ -1,0 +1,111 @@
+# general 
+random_seed: 1
+neptune_project: skambham/tp-test
+batch_size_per_gpu: 256
+check_val_every_n_epoch: 1500
+checkpoint_interval_epochs: 25
+# checkpoint_interval_minutes: 25
+max_time_minutes: 14400
+gradient_clip_algorithm: value
+gradient_clip_val: 0.5
+initialization_type: scratch
+remote_logging: true
+# gpus: 2 update with the number of GPUs available on your system
+gpus: 1
+precision: 16
+num_workers: 4 
+# debugging options
+profiler: passthrough
+overfit_batches: 0
+detect_anomaly: false
+deterministic: false
+
+# validation
+val_iomin_threshold: 0.0
+run_classify_regress: True
+
+# architecture
+ssl_model: dino
+backbone_type: resnet34
+image_in_ch: 9
+head_hidden_chs:
+- 256
+- 512
+head_out_ch: 512
+head_use_bn: true
+
+# update rules
+set_temperature_using_ipr_init: False
+temperature_student_init: 0.1   # overwritten if set_temperature_using_ipr_init == True
+temperature_teacher_init: 0.04  # overwritten if set_temperature_using_ipr_init == True
+ipr_student_init: 80.0  # used only if set_temperature_using_ipr_init == True
+ipr_teacher_init: 40.0  # used only if set_temperature_using_ipr_init == True
+param_momentum_final: 0.996
+param_momentum_init: 0.996
+param_momentum_epochs_end: 1000
+
+# optimizers
+optimizer_type: adam
+min_learning_rate: 1.0E-5
+max_learning_rate: 5.0E-4
+min_weight_decay: 0.0
+max_weight_decay: 0.0
+warm_up_epochs: 100
+warm_down_epochs: 100
+max_epochs: 1000 #2000
+
+# dataset
+# data_folder: update with the path to the folder with the anndata.h5ad files
+n_crops_for_tissue_test: 1000
+n_crops_for_tissue_train: 1000
+overlap_for_tissue_test: 0.0
+n_element_min_for_crop: 10
+n_cuts_for_tissue_train: 1
+n_neighbours_moran: 6
+metadata_to_classify: null
+metadata_to_regress: null
+x_key: x
+y_key: y
+#category_key: cell_type
+#category_keys: ['ES','Endothelial','Leydig','Macrophage','Myoid','RS','SPC','SPG','Sertoli']
+category_key: cell_type_proportions
+categories_to_channels: {
+        'ES': 0, 
+        'Endothelial': 1, 
+        'Leydig': 2, 
+        'Macrophage': 3, 
+        'Myoid': 4, 
+        'RS': 5, 
+        'SPC': 6, 
+        'SPG': 7, 
+        'Sertoli': 8
+}
+status_key: "status"
+
+# transform
+pixel_size: 4.0
+n_global_crops: 2  # used only for DINO
+n_local_crops: 2  # used only for DINO
+global_size: 96  # size (in pixel) of the global crop
+local_size: 96  # size (in pixel) of the local crop, only used for DINO
+global_scale:
+- 0.8
+- 1.0
+local_scale:
+- 0.5
+- 0.8
+drop_channel_prob: 0.2
+drop_channel_relative_freq: null
+drop_spot_prob:
+- 0.1
+- 0.2
+- 0.3
+global_intensity:
+- 0.8
+- 1.2
+occlusion_fraction:
+- 0.1
+- 0.3
+rasterize_sigmas:
+- 1.0
+- 1.5

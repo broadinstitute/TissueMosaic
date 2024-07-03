@@ -1,0 +1,12 @@
+{
+  "neptune_ml.anndata_tar_gz": "gs://ld-data-bucket/tissue-mosaic/slideseq_testis_anndata_h5ad.tar.gz",
+  "neptune_ml.credentials_json": "gs://ld-data-bucket/credentials.json",
+  "neptune_ml.ckpt_previous_run": "gs://ld-data-bucket/tissue-mosaic/dummy1.pt",
+  "neptune_ml.git_branch_or_commit": "b11ed832c2a8e5dc80abe9e70adf82ca5a7d0a23",
+  "neptune_ml.git_repo": "https://github.com/broadinstitute/TissueMosaic.git",
+  "neptune_ml.cpus_count" : 8, 
+  "neptune_ml.gpus_count" : 2, 
+  "neptune_ml.gpus_type" : "nvidia-tesla-p100"
+}
+
+

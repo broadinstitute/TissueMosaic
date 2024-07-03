@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: tissuemosaic
+Version: 0.0.1
+Summary: A Python library for the analysis of biological tissue and     cellular micron-environments based on self supervised learning
+Home-page: https://github.com/broadinstitute/TissueMosaic
+Author: Luca Dalessio, Sandeep Kambhampati
+Author-email: skambham@broadinstitute.org
+License: Apache 2.0
+Keywords: self supervised learning,tissue analysis
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
