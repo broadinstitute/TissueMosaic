@@ -6,11 +6,11 @@ TissueMosaic: A python library for the analysis of biological tissues
   :alt: tissuemosaic_logo
   :align: center
 
-.. image:: https://readthedocs.org/projects/tissue-mosaic/badge/?version=latest
+.. image:: https://readthedocs.org/projects/tissuemosaic/badge/?version=latest
   :width: 100
   :alt: documentation_status
   :align: center
-  :target: https://tissue-mosaic.readthedocs.io/en/latest/?badge=latest
+  :target: https://tissuemosaic.readthedocs.io/en/latest/?badge=latest
    
 Description
 -----------
@@ -278,7 +278,7 @@ and we will get back to you as soon as possible.
 
 Citation
 --------
-This software package was developed by *Luca D'Alessio*, *Sandeep Kambhampati*, and *Fedor Grab*.
+This software package was developed by  *Sandeep Kambhampati*, *Luca D'Alessio*, and *Fedor Grab*.
 
 ..
   If you use TissueMosaic please consider citing:
