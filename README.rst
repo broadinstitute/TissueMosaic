@@ -181,13 +181,13 @@ Next extract the features (this will take 5-10 minutes to run):
 .. code-block::
 
     mkdir testis_anndata_featurized
-    python main_2_featurize.py
-        --anndata_in testis_anndata
-        --anndata_out testis_anndata_featurized
-        --ckpt_in dino_testis.pt
-        --feature_key dino
-        --n_patches 500
-        --ncv_k 10 25 100
+    python main_2_featurize.py\
+        --anndata_in testis_anndata\
+        --anndata_out testis_anndata_featurized\
+        --ckpt_in dino_testis.pt\
+        --feature_key dino\
+        --n_patches 500\
+        --ncv_k 10 25 100\
         --suffix featurized
 
 Finally, evaluate the features based on their ability to predict the gene expression profile (this will take ~45 minutes to run for 1500 genes).
@@ -201,15 +201,15 @@ Finally, evaluate the features based on their ability to predict the gene expres
     export NUMEXPR_NUM_THREADS=1
 
     mkdir gr_results  
-    python main_3_gene_regression.py
-        --anndata_in testis_anndata_featurized
-        --out_dir gr_results
-        --out_prefix dino_ctype
-        --feature_key dino_spot_features
-        --alpha_regularization_strength 0.01
-        --filter_feature 2.0
-        --fc_bc_min_umi=500
-        --fg_bc_min_pct_cells_by_counts 10
+    python main_3_gene_regression.py\
+        --anndata_in testis_anndata_featurized\
+        --out_dir gr_results\
+        --out_prefix dino_ctype\
+        --feature_key dino_spot_features\
+        --alpha_regularization_strength 0.01\
+        --filter_feature 2.0\
+        --fc_bc_min_umi=500\
+        --fg_bc_min_pct_cells_by_counts 10\
         --cell_types ES
 
 This will write the gene regression evaluation metrics to the specified out directory.
