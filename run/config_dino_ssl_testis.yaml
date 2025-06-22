@@ -87,7 +87,7 @@ pixel_size: 4.0
 n_global_crops: 2  # used only for DINO
 n_local_crops: 2  # used only for DINO
 global_size: 96  # size (in pixel) of the global crop
-local_size: 96  # size (in pixel) of the local crop, only used for DINO
+local_size: 64  # size (in pixel) of the local crop, only used for DINO
 global_scale:
 - 0.8
 - 1.0
