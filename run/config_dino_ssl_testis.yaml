@@ -52,7 +52,7 @@ min_weight_decay: 0.0
 max_weight_decay: 0.0
 warm_up_epochs: 100
 warm_down_epochs: 100
-max_epochs: 1000 #2000
+max_epochs: 1000
 
 # dataset
 # data_folder: update with the path to the folder with the anndata.h5ad files
@@ -66,8 +66,6 @@ metadata_to_classify: null
 metadata_to_regress: null
 x_key: x
 y_key: y
-#category_key: cell_type
-#category_keys: ['ES','Endothelial','Leydig','Macrophage','Myoid','RS','SPC','SPG','Sertoli']
 category_key: cell_type_proportions
 categories_to_channels: {
         'ES': 0, 
