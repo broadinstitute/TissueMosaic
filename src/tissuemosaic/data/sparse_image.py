@@ -25,7 +25,6 @@ import torch.nn.functional as F
 if TYPE_CHECKING:
     from .datamodule import AnndataFolderDM
 
-
 class SparseImage:
     """
     Sparse torch tensor containing the spatial data
@@ -81,6 +80,7 @@ class SparseImage:
 
         # These variables are built
         self.origin = None
+
         self.data = self._create_torch_sparse_image(padding=self._padding, pixel_size=self._pixel_size)
         print("The dense shape of the image is ->", self.data.size())
         # print("Occupacy (zero, single, double, ...) of voxels in 3D sparse array ->",
@@ -101,9 +101,8 @@ class SparseImage:
             "Error. x_raw, y_raw, cat_raw must be 1D array of the same length"
 
         # Check all category keys are included in categories_to_code
-        
-        assert set(cat_raw.columns).issubset(set(self._categories_to_codes.keys())), \
-            "Error. Some categories are NOT present in the categories_to_codes dictionary"
+        assert set(cat_raw.columns) == set(self._categories_to_codes.keys()), \
+            "Error. Some categories are NOT present in the categories_to_codes dictionary or vice versa"
 
         ## convert cell type proportions dataframe to tensor 'codes_vals'
         codes = torch.tensor([cat_raw[cat] for cat in cat_raw]).long() 
@@ -1058,7 +1057,8 @@ class SparseImage:
             datamodule: AnndataFolderDM,
             model: torch.nn.Module,
             apply_transform: bool = True,
-            batch_size: int = 64):
+            batch_size: int = 64,
+            overwrite: bool = True):
         """
         Draw a patch around each spot.
         Each (valid) patch is analyzed by the (pretrained) model.
@@ -1076,6 +1076,14 @@ class SparseImage:
                 If False no transformation is applied and the sparse tensors are fed into the model.
             batch_size: how many crops to process simultaneously (default = 64). Use to adjust the GPU memory footprint.
         """
+
+        if feature_name in self._spot_properties_dict.keys() and not overwrite:
+            print("The key {0} is already present in spot_properties_dict.")
+            print(" Set overwrite=True to overwrite its value. Nothing will be done.".format(feature_name))
+            return
+        elif feature_name in self._spot_properties_dict.keys() and overwrite:
+            print("The key {0} is already present in spot_properties_dict and it will be overwritten".format(
+                feature_name))
         
         # set the model into eval mode
         was_original_in_training_mode = model.training
@@ -1414,6 +1422,8 @@ class SparseImage:
         if return_patches:
             return self._patch_properties_dict['train_test_val_split_id'], self._patch_properties_dict['train_test_val_split_id_patch_xywh']
         
+    ## TODO: way to ensure that each spot appears in a test fold exactly once
+    ## TODO: e.g. run downstream task (such as CME) at patch level, then transfer to spot
     def kfold_patch_train_test_split(self, feature_xywh: str=None,
                                 res: int=0.4, 
                                 stratify: bool=True,
@@ -1433,7 +1443,6 @@ class SparseImage:
             write_to_spot_dictionary: whether to transfer patch train/test ids to spot and write to spot dictionary
             random_state: affects the ordering of the indices during shuffling; pass an int for reproducibility 
         """
-        
         ## Cluster Patch NCVs
         if stratify:
             leiden_clusters = self.compute_patch_ncv_clusters(feature_xywh, res)
@@ -1457,19 +1466,22 @@ class SparseImage:
         else:
             kf = KFold(n_splits = n_splits, shuffle=True, random_state=random_state)
             n = kf.get_n_splits(self._patch_properties_dict[feature_xywh])
-            train_index, test_index = kf.split(self._patch_properties_dict[feature_xywh])
-            for i, (train_index, test_index) in enumerate(skf.split(self._patch_properties_dict[feature_xywh])):
+            # print(kf.split(self._patch_properties_dict[feature_xywh]))
+            # train_index, test_index = kf.split(self._patch_properties_dict[feature_xywh])
+            for i, (train_index, test_index) in enumerate(kf.split(self._patch_properties_dict[feature_xywh])):
                 train_test_id = -1 * np.ones(self._patch_properties_dict[feature_xywh].shape[0])
                 train_test_id[train_index] = 0
                 train_test_id[test_index] = 1
                 self.write_to_patch_dictionary(key=f"train_test_split_fold_{i}_id", values=train_test_id,
                     patches_xywh = self._patch_properties_dict[feature_xywh], overwrite=True)
                 
-            ## Write to spot dictionary
-            if write_to_spot_dictionary:
-                 self.transfer_patch_to_spot(
-                    keys_to_transfer=f"train_test_split_fold_{i}_id",
-                    overwrite=True)
+                ## Write to spot dictionary
+                if write_to_spot_dictionary:
+                    self.transfer_patch_to_spot(
+                        keys_to_transfer=f"train_test_split_fold_{i}_id",
+                        strategy_patch_to_image="closest",
+                        strategy_image_to_spot="closest",
+                        overwrite=True)
             
         
     def get_spot_dictionary_subset_patch(self,
@@ -1653,7 +1665,6 @@ class SparseImage:
                     dh_from_center = torch.linspace(start=-0.5 * (h - 1), end=0.5 * (h - 1), steps=h)
                     d2_from_center: torch.Tensor = dw_from_center[:, None].pow(2) + dh_from_center[None, :].pow(2)
                     
-                    ## explicitly do this all on CPU?
                     d2_from_center = d2_from_center.to(patch_quantity.device)
                     
                     mask = (d2_from_center < tmp_distance[x:x + w, y:y + h])  # shape (w, h)
@@ -2169,4 +2180,139 @@ class SparseImage:
             return torch.from_numpy(_x).float().cpu()
         else:
             raise ValueError("Expect torch.Tensor or numpy.ndarray. Received {0}.".format(type(_x)))
+
+
+    ##TODO: VALIDATE THESE METHODS
+
+    def transfer_image_to_patch(
+        self,
+        keys_to_transfer: List[str],
+        overwrite: bool = False,
+        verbose: bool = False,
+        strategy: str = "average",
+        patch_key: str = None, ## patch key to serve as anchor for transfer
+    ):
+        """
+        Transfer annotations from image to patch.
+
+        Args:
+            keys_to_transfer: List of keys to transfer from image_properties_dict to patch_properties_dict.
+            overwrite: bool, if true, allows overwriting existing patch properties.
+            verbose: bool, if true, prints intermediate messages.
+            strategy: str, either 'average' (default) or 'sum'. Determines how pixel values are aggregated within patches.
+        """
+        # Ensure keys_to_transfer is a list
+        if isinstance(keys_to_transfer, str):
+            keys_to_transfer = [keys_to_transfer]
+        assert isinstance(keys_to_transfer, list), \
+            "Error. keys_to_transfer must be a list. Received {0}".format(type(keys_to_transfer))
+
+        # Verify the keys exist in the image dictionary
+        assert set(keys_to_transfer).issubset(self._image_properties_dict.keys()), \
+            "Some keys are not present in image_properties_dict."
+
+        for key in keys_to_transfer:
+            if verbose:
+                print(f"Working on -> {key}")
+
+            # Retrieve the image-level data
+            image_quantity = self.read_from_image_dictionary(key=key)
+
+            # Ensure the data is a 3D tensor: (channels, width, height)
+            # assert len(image_quantity.shape) == 3, \
+            #     f"Expected 3D tensor for image properties. Got shape {image_quantity.shape} for key {key}."
+
+            img_w, img_h = image_quantity.shape
+
+            # Initialize patch-level storage
+            patch_results = []
+
+            assert patch_key in self._patch_properties_dict.keys(), \
+                f"Error: The patch key '{patch_key}' is not present in the patch properties dictionary."
+            
+            assert patch_key + "_patch_xywh" in self._patch_properties_dict.keys(), \
+                f"Error: The patch key '{patch_key}_patch_xywh' is not present in the patch properties dictionary."
+            
+            _patch_xywh = self._patch_properties_dict[patch_key + "_patch_xywh"]
+
+
+
+            for n, xywh in enumerate(_patch_xywh):  # Iterate over patches
+
+                x = xywh[0]
+                y = xywh[1]
+                w = xywh[2]
+                h = xywh[3]
+
+                # Extract the region of interest from the image
+                patch_region = image_quantity[x:x+w, y:y+h]
+
+                if strategy == "average":
+                    patch_value = patch_region.mean(dim=(0, 1))  # Average over width and height
+                elif strategy == "sum":
+                    patch_value = patch_region.sum(dim=(0, 1))  # Sum over width and height
+                elif strategy == "median":
+                    patch_value = torch.median(patch_region) ## median over width and height
+                else:
+                    raise ValueError(f"Unsupported strategy '{strategy}'. Use 'average' or 'sum'.")
+
+                # Append the result for the current patch
+                patch_results.append(patch_value)
+
+            # Stack patch-level results into a single tensor
+            patch_results = torch.stack(patch_results, dim=0)  # Shape: (num_patches, channels)
+
+            # Check for finite values in the results
+            if not torch.all(torch.isfinite(patch_results)):
+                raise ValueError(f"Error: The patch_property {key} contains non-finite values.")
+
+            # Store the result in the patch dictionary
+            self.write_to_patch_dictionary(key=key, values=patch_results, patches_xywh = _patch_xywh, overwrite=overwrite)
+
+            if verbose:
+                print(f"Successfully transferred {key} to patches.")
+
+
+
+    def transfer_spot_to_patch(
+        self,
+        keys_to_transfer: List[str],
+        overwrite: bool = False,
+        verbose: bool = False,
+        strategy_spot_to_image: str = "bilinear",
+        strategy_image_to_patch: str = "average",
+        patch_key: str = None, ## patch key to serve as anchor for transfer
+    ):
+        """
+        Utility function which sequentially transfers annotations from spot -> image -> patch.
+
+        Args:
+            keys_to_transfer: List of keys to transfer from spot_properties_dict to patch_properties_dict.
+            overwrite: bool, if true allows overwriting existing patch properties.
+            verbose: bool, if true, prints intermediate messages.
+            strategy_spot_to_image: str, interpolation strategy for spot to image transfer.
+            strategy_image_to_patch: str, aggregation strategy for image to patch transfer.
+        """
+        if verbose:
+            print("Transferring annotations from spot to image first")
+
+        # Step 1: Transfer spot to image
+        self.transfer_spot_to_image(
+            keys_to_transfer=keys_to_transfer,
+            overwrite=overwrite,
+            verbose=verbose,
+            strategy=strategy_spot_to_image,
+        )
+
+        if verbose:
+            print("Transferring annotations from image to patch last")
+
+        # Step 2: Transfer image to patch
+        self.transfer_image_to_patch(
+            keys_to_transfer=keys_to_transfer,
+            overwrite=overwrite,
+            verbose=verbose,
+            strategy=strategy_image_to_patch,
+            patch_key=patch_key
+        )
 

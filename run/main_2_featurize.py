@@ -92,6 +92,8 @@ def parse_args(argv: List[str]) -> dict:
                         this parameter is not required and the ssl_model will be inferred from the checkpoint.")
     parser.add_argument("--suffix", type=str, default=None, ## add user defined suffix to file name
                     help="If specified, the suffix is attended to the end of each filename output is written to.")
+    parser.add_argument("--overwrite", type=bool, default=True, ## add user defined suffix to file name
+                    help="If true and feature key is present in either patch or spot properties dict, it will be recomputed.")
 
     # if specified ncv_r is computed
     parser.add_argument("--ncv_r", type=float, nargs='*', default=None,
@@ -133,7 +135,7 @@ if __name__ == '__main__':
     if ssl_model == "barlow":
         model = Barlow.load_from_checkpoint(checkpoint_path=config_dict_["ckpt_in"], strict=False)
     elif ssl_model == "dino":
-        model = Dino.load_from_checkpoint(checkpoint_path=config_dict_["ckpt_in"], strict=False)
+        model = Dino.load_from_checkpoint(checkpoint_path=config_dict_["ckpt_in"], strict=False)                                     
     elif ssl_model == "simclr":
         model = Simclr.load_from_checkpoint(checkpoint_path=config_dict_["ckpt_in"], strict=False)
     elif ssl_model == "vae":
@@ -146,7 +148,7 @@ if __name__ == '__main__':
     for f in os.listdir(anndata_source_folder):
         if f.endswith('.h5ad'):
             fname_list.append(f)
-    
+
     for fname in fname_list:
         
         
@@ -181,34 +183,56 @@ if __name__ == '__main__':
             n_patches_max = config_dict_["n_patches"], ## used for strategy 'random'
             fraction_patch_overlap=config_dict_["frac_overlap"], ## used for strategy 'tiling',
             remove_overlap=config_dict_["remove_patch_overlap"], ## used for strategy 'random'
-            overwrite=True
+            overwrite=config_dict_["overwrite"]
         )
+
+        # transfer sparse image to cpu to avoid memory issues in next step
+        sparse_img = sparse_img.cpu()
+
         ## transfer patch features to spot level (this is an interpolation from all patches that overlap a given spot)
         sparse_img.transfer_patch_to_spot(keys_to_transfer=[config_dict_["feature_key"]],
-                                          overwrite=True,
+                                        #   overwrite=True, 
+                                          overwrite=False,
                                           verbose=False,
                                           strategy_patch_to_image=config_dict_["strategy_patch_to_image"],
                                           strategy_image_to_spot=config_dict_["strategy_image_to_spot"])
 
         if config_dict_["patch_train_test_split"]:
+
+            print("Computing patch train test split")
+
             ## run spatial train_test_split at patch level
-            _ = sparse_img.patch_train_test_val_split(feature_xywh=config_dict_["feature_key"] + "_patch_xywh",
+            _ = sparse_img.patch_train_test_split(feature_xywh=config_dict_["feature_key"] + "_patch_xywh",
                                         res=config_dict_["ncv_patch_cluster_res"], 
                                         stratify=True,
                                         write_to_spot_dictionary=True, 
                                         return_patches=True)
+            ## run spatial train_test_val_split at patch level (used for dev purposes)
+            # _ = sparse_img.patch_train_test_val_split(feature_xywh=config_dict_["feature_key"] + "_patch_xywh",
+            #                             res=config_dict_["ncv_patch_cluster_res"], 
+            #                             stratify=True,
+            #                             write_to_spot_dictionary=True, 
+            #                             return_patches=True)
+            
         
         if config_dict_["compute_spot_features"]:
             print("Computing spot features")
+
+            # transfer sparse image back to gpu to compute spot features
+            if config_dict_["gpu_enabled"]:
+                sparse_img = sparse_img.cuda()
+
             ## the true spot features are computed by drawing a patch around each spot. they are stored in the anndata as '_spot_features'
             sparse_img.compute_spot_features(feature_name=config_dict_["feature_key"] + "_spot_features",
                 datamodule=dm,
                 model=model,
-                batch_size=config_dict_["spot_feature_batch_size"])
+                batch_size=config_dict_["spot_feature_batch_size"],
+                overwrite=config_dict_["overwrite"])
                 
-            print("Computing spot train test split")
-            ## compute spatially partitioned spot train test split
-            sparse_img.spot_train_test_split(patch_size=dm.global_size)
+            if not config_dict_["patch_train_test_split"]:
+                print("Computing spot train test split")
+                ## compute spatially partitioned spot train test split
+                sparse_img.spot_train_test_split(patch_size=dm.global_size)
         
         # remove the intermediate results in the patch_dict and image_dict and save the new anndata to file
         # sparse_img.clear_dicts(patch_dict=True, image_dict=True)

@@ -160,6 +160,7 @@ class SmartUmap(UMAP):
         # overwrites some UMAP default values
         kargs['n_neighbors'] = kargs.get('n_neighbors', 25)
         kargs['min_dist'] = kargs.get('min_dist', 0.5)
+        kargs['low_memory'] = kargs.get('low_memory', False)
 
         # inputs
         self.preprocess_strategy = preprocess_strategy

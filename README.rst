@@ -197,8 +197,6 @@ Finally, evaluate the features based on their ability to predict the gene expres
     #set environment threads
     export OMP_NUM_THREADS=1
     export MKL_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
-    export NUMEXPR_NUM_THREADS=1
 
     mkdir gr_results  
     python main_3_gene_regression.py\

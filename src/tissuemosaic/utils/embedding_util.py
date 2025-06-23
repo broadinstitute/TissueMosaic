@@ -7,6 +7,17 @@ import torch
 import pandas as pd
 from sklearn.linear_model import RidgeClassifierCV, RidgeCV
 
+import scanpy as sc
+import os
+import sys
+import time
+from anndata import read_h5ad
+import pickle
+
+import anndata as ad
+import subprocess
+import pickle
+
 from tissuemosaic.utils import *
 from tissuemosaic.plots import *
 
@@ -14,15 +25,25 @@ from tissuemosaic.data import SparseImage
 
 from tissuemosaic.utils.anndata_util import *
 
+# import warnings
+# warnings.filterwarnings("ignore") ## temporary
+
+
+
 # Set of functions to perform common desired tasks with embeddings, 
 # i.e. motif query, clustering, and conditional motif enrichment
 
+
+## TODO: double check this function
 def motif_query(adata_ref: anndata.AnnData,
                 adata_query: anndata.AnnData,
                 query_point: Tuple[int, int],
                 rep_key: str,
                 dist_type: str = 'cosine',
-                exponentiate: bool=True ## used for cosine distance
+                exponentiate: bool=True, ## used for cosine distance
+                exponentiate_factor: int=5, ## used for cosine distance,
+                sigmoid_transform: bool=False,
+                sigmoid_factor: int=2
                 ):
     """
     Query motif similarity between a query AnnData object at a specific point and a reference AnnData.
@@ -52,12 +73,19 @@ def motif_query(adata_ref: anndata.AnnData,
 
     elif dist_type == 'cosine':
         sim_n = np.sum(adata_ref.obsm[rep_key] * query_z[None, :], -1) / (np.linalg.norm(adata_ref.obsm[rep_key], axis=-1) * np.linalg.norm(query_z))
+        sim_n = np.clip(sim_n, a_min=0., a_max=1.) ** exponentiate_factor
+        # if exponentiate:
+        #     sim_n = np.clip(sim_n, a_min=0., a_max=1.) ** exponentiate_factor
+        # else:
+        #     sim_n = np.clip(sim_n, a_min=0., a_max=1.)
+
+        # ## TODO: integrate this code
+        if sigmoid_transform:
+            sim_n = ((1 / (1 + np.exp(-sigmoid_factor * (sim_n))))-0.5) * 2
+
         if exponentiate:
-            sim_n = np.clip(sim_n, a_min=0., a_max=1.) ** 5
-        else:
-            sim_n = np.clip(sim_n, a_min=0., a_max=1.)
-        sim_n[np.where(np.isnan(sim_n))[0]] = 0
-        
+            sim_n = np.clip(sim_n, a_min=0., a_max=1.) ** exponentiate_factor
+
     adata_ref.obs['sim'] = sim_n
 
     return adata_ref
@@ -71,7 +99,8 @@ def cluster(adata: anndata.AnnData,
                cluster_patches: bool = True,
                x_key: str = 'x',
                y_key: str = 'y',
-               category_key: str = 'cell_type_proportions'):
+               category_key: str = 'cell_type_proportions',
+               low_memory: bool = False):
     """
     Cluster embeddings in an AnnData object by computing UMAP and running leiden clustering on the UMAP graph
 
@@ -85,6 +114,7 @@ def cluster(adata: anndata.AnnData,
     x_key (str): Key for x-coordinates in `.obs`. Default is 'x'.
     y_key (str): Key for y-coordinates in `.obs`. Default is 'y'.
     category_key (str): Key for category information in `.obs`. Default is 'cell_type_proportions'.
+    low_memory (bool): Whether to use low memory mode for UMAP. Default is False.
 
     Returns:
     anndata.AnnData: Updated AnnData object with UMAP embeddings under "umap_{key}" and clustering results under "leiden_feature_{key}_res_{res}_one_hot" in .obsm.
@@ -95,7 +125,7 @@ def cluster(adata: anndata.AnnData,
         patch_properties_dict = adata.uns['sparse_image_state_dict']['patch_properties_dict']
         print("Running UMAP")
         smart_pca = SmartPca(preprocess_strategy='z_score')
-        smart_umap = SmartUmap(n_neighbors=n_neighbors, preprocess_strategy=umap_preprocess_strategy, n_components=2, min_dist=0.5, metric='euclidean')
+        smart_umap = SmartUmap(n_neighbors=n_neighbors, preprocess_strategy=umap_preprocess_strategy, n_components=2, min_dist=0.5, metric='euclidean', low_memory=low_memory)
 
         input_features = patch_properties_dict[key]
         embeddings_pca = smart_pca.fit_transform(input_features, n_components=0.9)
@@ -114,20 +144,30 @@ def cluster(adata: anndata.AnnData,
             leiden_res = [leiden_res]
 
         leiden_keys_one_hot = []
+        leiden_keys = []
         for res in leiden_res:
             leiden_clusters = smart_leiden.cluster(resolution=res, partition_type='RBC')
             patch_properties_dict["leiden_feature_" + key + "_" +str(res)] = leiden_clusters
             patch_properties_dict["leiden_feature_" + key + "_res_"+str(res)+"_one_hot"] = torch.nn.functional.one_hot(torch.from_numpy(leiden_clusters).long())  
             leiden_keys_one_hot.append("leiden_feature_" + key + "_res_"+str(res)+"_one_hot")
+            leiden_keys.append("leiden_feature_" + key + "_" +str(res))
 
         sp_img = SparseImage.from_anndata(adata, x_key=x_key, y_key=y_key, category_key=category_key)
 
-        for leiden_key in leiden_keys_one_hot:
-                sp_img.write_to_patch_dictionary(leiden_key, torch.Tensor(patch_properties_dict[leiden_key].float()), patches_xywh = patch_properties_dict[key + '_patch_xywh'], overwrite = True)
+        for leiden_key_one_hot in leiden_keys_one_hot:
+                sp_img.write_to_patch_dictionary(leiden_key_one_hot, torch.Tensor(patch_properties_dict[leiden_key_one_hot]).float(), patches_xywh = patch_properties_dict[key + '_patch_xywh'], overwrite = True)
+
+        for leiden_key in leiden_keys:
+                sp_img.write_to_patch_dictionary(leiden_key, torch.Tensor(patch_properties_dict[leiden_key]).float(), patches_xywh = patch_properties_dict[key + '_patch_xywh'], overwrite = True)
+
 
         # Note that I use the one_hot version of the Leiden clusters to transfer the annotations
         sp_img.transfer_patch_to_spot(
             keys_to_transfer=leiden_keys_one_hot,
+            overwrite=True)
+
+        sp_img.transfer_patch_to_spot(
+            keys_to_transfer=leiden_keys,
             overwrite=True)
 
         # print(sp_img.spot_properties_dict['leiden_feature_dino_res_0.05_one_hot'].shape)
@@ -141,7 +181,7 @@ def cluster(adata: anndata.AnnData,
             
         print("Running UMAP")
         smart_pca = SmartPca(preprocess_strategy='z_score')
-        smart_umap = SmartUmap(n_neighbors=n_neighbors, preprocess_strategy=umap_preprocess_strategy, n_components=2, min_dist=0.5, metric='euclidean')
+        smart_umap = SmartUmap(n_neighbors=n_neighbors, preprocess_strategy=umap_preprocess_strategy, n_components=2, min_dist=0.5, metric='euclidean', low_memory=low_memory)
                 
         input_features = adata.obsm[key]
         embeddings_pca = smart_pca.fit_transform(input_features, n_components=0.9)
@@ -162,7 +202,7 @@ def cluster(adata: anndata.AnnData,
         for res in leiden_res:
             leiden_clusters = smart_leiden.cluster(resolution=res, partition_type='RBC')
             adata.obs["leiden_feature_" + key + "_" +str(res)] = leiden_clusters
-            adata.obsm["leiden_feature_" + key + "_res_"+str(res)+"_one_hot"] = torch.nn.functional.one_hot(torch.from_numpy(leiden_clusters).long())  
+            adata.obsm["leiden_feature_" + key + "_res_"+str(res)+"_one_hot"] = np.array(torch.nn.functional.one_hot(torch.from_numpy(leiden_clusters).long()))  
         
         return adata
 
@@ -170,6 +210,7 @@ def conditional_motif_enrichment(adata: Anndata,
                                  feature_key: str,
                                  classify_or_regress: str,
                                  alpha_regularization: Union[float, list],
+                                 train_test_split_strategy: str="spot",
                                  verbose: bool = False):
     """
     Perform conditional motif enrichment by training classifiers on spatially partitioned train/test folds.
@@ -198,8 +239,12 @@ def conditional_motif_enrichment(adata: Anndata,
             print(f"Running kfold {kfold}")
             
             ## spatial split
-            train_anndata = adata[adata.obs[f'train_test_fold_{kfold}'] == 0]
-            test_anndata = adata[adata.obs[f'train_test_fold_{kfold}'] == 1]
+            if train_test_split_strategy == "spot":
+                train_anndata = adata[adata.obs[f'train_test_fold_{kfold}'] == 0]
+                test_anndata = adata[adata.obs[f'train_test_fold_{kfold}'] == 1]
+            elif train_test_split_strategy == "patch":
+                train_anndata = adata[adata.obs[f'train_test_split_fold_{kfold}_id'] == 0]
+                test_anndata = adata[adata.obs[f'train_test_split_fold_{kfold}_id'] == 1]
 
             ## balance after train/test split b/c of spatial partitioning to downsample majority class
             train_anndata = balance_anndata(train_anndata, 'classify_condition')
@@ -261,4 +306,3 @@ def conditional_motif_enrichment(adata: Anndata,
     all_test_anndatas = merge_anndatas_inner_join(all_folds_test_anndatas)
 
     return all_test_anndatas
-

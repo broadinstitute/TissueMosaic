@@ -48,4 +48,5 @@ src/tissuemosaic/utils/anndata_util.py
 src/tissuemosaic/utils/dict_util.py
 src/tissuemosaic/utils/embedding_util.py
 src/tissuemosaic/utils/nms_util.py
+src/tissuemosaic/utils/tmi_util.py
 src/tissuemosaic/utils/validation_util.py

@@ -104,16 +104,7 @@ If you run the following command from your terminal it should report True:
 
     python -c 'import torch; print(torch.cuda.is_available())'
 
-Next install the most recent version of Pyro (not yet available using pip):
-
-.. code-block::
-
-    git clone https://github.com/pyro-ppl/pyro.git
-    cd pyro
-    pip install .
-
-
-Finally install *Tissue Mosaic* and its dependencies:
+Next install *Tissue Mosaic* and its dependencies:
 
 .. code-block::
 
@@ -161,31 +152,47 @@ Next, navigate to the "TissueMosaic/run" directory and train the model (this wil
 
 .. code-block::
 
-    cd tissuemosaic/run
-    python main_1_train_ssl.py --config config_barlow_ssl.yaml --data_folder testis_anndata
+    cd TissueMosaic/run
+    python main_1_train_ssl.py --config config_dino_ssl.yaml --data_folder testis_anndata --ckpt_out dino_testis.pt
 
     # or alternatively
-    # python main_1_train_ssl.py --config config_dino_ssl.yaml --data_folder testis_anndata --gpus 2
-    # python main_1_train_ssl.py --config config_simclr_ssl.yaml --data_folder testis_anndata --gpus 2
-    # python main_1_train_ssl.py --config config_vae_ssl.yaml --data_folder testis_anndata --gpus 2
+    # python main_1_train_ssl.py --config config_barlow_ssl.yaml --data_folder testis_anndata --ckpt_out barlow_testis.pt
+    # python main_1_train_ssl.py --config config_simclr_ssl.yaml --data_folder testis_anndata --ckpt_out simclr_testis.pt
+    # python main_1_train_ssl.py --config config_vae_ssl.yaml --data_folder testis_anndata --ckpt_out vae_testis.pt
 
 Next extract the features (this will take only few minutes to run):
 
 .. code-block::
 
-    python main_2_featurize.py
-        --anndata_in adata_0_raw.h5ad
-        --anndata_out adata_0_annotated.h5ad
-        --ckpt_in ckpt_barlow.ckpt
-        --feature_key barlow
-        --n_patches 500
-        --ncv_k 10 25 100
+    mkdir testis_anndata_featurized
+    python main_2_featurize.py\
+        --anndata_in testis_anndata\
+        --anndata_out testis_anndata_featurized\
+        --ckpt_in dino_testis.pt\
+        --feature_key dino\
+        --n_patches 500\
+        --ncv_k 10 25 100\
+        --suffix featurized
 
 Finally, evaluate the features based on their ability to predict the gene expression profile.
 
 .. code-block::
 
-    python main_3_genex.py --anndata_in XXX --l1 0.1 --n_pca 9 --XXX # DOUBLE CHECK
+    #set environment threads
+    export OMP_NUM_THREADS=1
+    export MKL_NUM_THREADS=1
+
+    mkdir gr_results
+    python main_3_gene_regression.py\
+        --anndata_in testis_anndata_featurized\
+        --out_dir gr_results\
+        --out_prefix dino_ctype\
+        --feature_key dino_spot_features\
+        --alpha_regularization_strength 0.01\
+        --filter_feature 2.0\
+        --fc_bc_min_umi=500\
+        --fg_bc_min_pct_cells_by_counts 10\
+        --cell_types ES
 
 It might make sense to train your model remotely on google cloud (or another cloud provider)
 using `Terra <https://terra.bio>`_ or `cromwell <https://cromwell.readthedocs.io/en/stable/>`_.

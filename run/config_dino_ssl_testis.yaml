@@ -1,6 +1,6 @@
 # general 
 random_seed: 1
-neptune_project: skambham/tp-test
+# neptune_project: skambham/tp-test
 batch_size_per_gpu: 256
 check_val_every_n_epoch: 1500
 checkpoint_interval_epochs: 25
@@ -9,9 +9,8 @@ max_time_minutes: 14400
 gradient_clip_algorithm: value
 gradient_clip_val: 0.5
 initialization_type: scratch
-remote_logging: true
-# gpus: 2 update with the number of GPUs available on your system
-gpus: 1
+remote_logging: false 
+gpus: 1 # update with the number of GPUs available on your system
 precision: 16
 num_workers: 4 
 # debugging options
@@ -22,7 +21,7 @@ deterministic: false
 
 # validation
 val_iomin_threshold: 0.0
-run_classify_regress: True
+run_classify_regress: False 
 
 # architecture
 ssl_model: dino
