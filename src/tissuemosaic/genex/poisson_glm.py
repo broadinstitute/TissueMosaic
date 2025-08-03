@@ -235,13 +235,11 @@ class GeneRegression:
     
         if not regularization_sweep:
             if fit_alpha_dict:
-                 ## TODO: assert that alpha regularization is a numpy array
                 assert alpha_regularization_strengths.size == 1
                 for gene_name in gene_names:
                     self._alpha_dict[gene_name] = alpha_regularization_strengths[0]
             else:
                 assert alpha_dict is not None
-                ## TODO: check this assert statement
                 for gene_name in gene_names:
                     assert gene_name in list(self._alpha_dict.keys())
                 self._alpha_dict = alpha_dict

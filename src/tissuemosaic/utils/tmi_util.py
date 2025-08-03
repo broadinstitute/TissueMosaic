@@ -240,18 +240,14 @@ def run_permutation(anndata1, anndata2, temp_file_1, temp_file_2, out_dir, ctype
     else:
         cond_2_result = subprocess.run(cond_2_command, capture_output=False, text=True)
 
-    ## TODO: add out_prefix 
-
     ## calculated permuted delta TMI value
     cond_1_rel_q_gk_outfile_name = 'dino_cond_1_null' + '_' + ctype + f"_df_rel_q_gk_ssl.pickle"
     cond_1_rel_q_gk = read_pickled_file(out_dir, cond_1_rel_q_gk_outfile_name)
     cond_1_rel_q_gk = -1 * cond_1_rel_q_gk
-    # cond_1_rel_q_gk[cond_1_rel_q_gk > 0] = 0
 
     cond_2_rel_q_gk_outfile_name = 'dino_cond_2_null' + '_' + ctype + f"_df_rel_q_gk_ssl.pickle"
     cond_2_rel_q_gk = read_pickled_file(out_dir, cond_2_rel_q_gk_outfile_name)
     cond_2_rel_q_gk = -1 * cond_2_rel_q_gk
-    # cond_2_rel_q_gk[cond_2_rel_q_gk > 0] = 0
 
     higher_si_in_cond_2 = cond_2_rel_q_gk.sub(cond_1_rel_q_gk, fill_value=0).dropna()
 

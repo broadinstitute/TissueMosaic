@@ -1,3 +1,7 @@
+"""
+Set of functions to perform common desired tasks with embeddings, 
+i.e. motif query, clustering, and conditional motif enrichment
+"""
 
 from typing import Union, Tuple, List
 import anndata
@@ -25,16 +29,7 @@ from tissuemosaic.data import SparseImage
 
 from tissuemosaic.utils.anndata_util import *
 
-# import warnings
-# warnings.filterwarnings("ignore") ## temporary
 
-
-
-# Set of functions to perform common desired tasks with embeddings, 
-# i.e. motif query, clustering, and conditional motif enrichment
-
-
-## TODO: double check this function
 def motif_query(adata_ref: anndata.AnnData,
                 adata_query: anndata.AnnData,
                 query_point: Tuple[int, int],
@@ -79,7 +74,6 @@ def motif_query(adata_ref: anndata.AnnData,
         # else:
         #     sim_n = np.clip(sim_n, a_min=0., a_max=1.)
 
-        # ## TODO: integrate this code
         if sigmoid_transform:
             sim_n = ((1 / (1 + np.exp(-sigmoid_factor * (sim_n))))-0.5) * 2
 
@@ -121,7 +115,6 @@ def cluster(adata: anndata.AnnData,
     """
     
     if cluster_patches:
-        ##TODO: support functionality for clustering a merged anndata file containing multiple samples
         patch_properties_dict = adata.uns['sparse_image_state_dict']['patch_properties_dict']
         print("Running UMAP")
         smart_pca = SmartPca(preprocess_strategy='z_score')
@@ -278,8 +271,6 @@ def conditional_motif_enrichment(adata: Anndata,
             ## spatial split
             train_anndata = adata[adata.obs[f'train_test_fold_{kfold}'] == 0]
             test_anndata = adata[adata.obs[f'train_test_fold_{kfold}'] == 1]
-
-            ## TODO: add some sort of balancing w respect to binned condition
             
             ## Train regressor
             regressor = RidgeCV(alphas=alpha_regularization)

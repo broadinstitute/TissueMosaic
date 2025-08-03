@@ -675,8 +675,6 @@ class AnndataFolderDM(SparseSslDM):
         # create test_dataset_random and write to file
         all_names = [metadata.f_name for metadata in all_metadatas]
 
-        ## TODO: allow cropper strategy to be random or tiling
-        ## TODO: don't move sparse images to cuda by default
         if torch.cuda.is_available():
             all_sparse_images = [sp_img.cuda() for sp_img in all_sparse_images]
 

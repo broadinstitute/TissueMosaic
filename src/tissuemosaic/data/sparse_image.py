@@ -150,9 +150,7 @@ class SparseImage:
         # Obtain cell types as indices
         codes = torch.arange(start=0,end=n_codes+1).repeat(ix.shape[0])
         codes_1d = torch.flatten(codes)
-
-        # Remove any nan (todo: check why nan exists in the first place)
-        codes_vals = torch.flatten(torch.nan_to_num(codes_vals)) 
+        codes_vals = torch.flatten(torch.nan_to_num(codes_vals)) # remove any nan 
         
         # Remove 0 values as don't need to store
         keep_ind = torch.nonzero(codes_vals).squeeze()
@@ -162,7 +160,6 @@ class SparseImage:
         # Repeat ix and iy values based on number of cell_types at that spot
         ix_rep = torch.repeat_interleave(ix, n_codes+1)
         ix_rep = ix_rep[keep_ind]
-        
         iy_rep = torch.repeat_interleave(iy, n_codes+1)
         iy_rep = iy_rep[keep_ind]
         

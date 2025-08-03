@@ -108,8 +108,6 @@ def regress(train_dataset, val_dataset, test_dataset, config_dict_, ctype, fold_
     ## In this case, the design matrix X must have full column rank (no collinearities).
     ## but our X (cell type proportions) has collinearity so we set alpha = 1.0 as default for baseline model
 
-    ## TODO: set max_iter as user parameter
-    ## TODO: provide metric to confirm convergence with default max_iter?
     print("Training baseline model")
     start_time = time.time()
     gr_baseline.train(
@@ -123,8 +121,6 @@ def regress(train_dataset, val_dataset, test_dataset, config_dict_, ctype, fold_
     
     gr = GeneRegression(use_covariates=True, scale_covariates=config_dict_['scale_covariates'], umi_scaling=config_dict_['umi_scaling'], cell_type_prop_scaling=config_dict_['cell_type_prop_scaling'])
 
-    ## TODO: allow multiple covariates in GeneDataset / GeneRegression
-    ## TODO: allow user to modify regularization strengths
     print("Training covariate model")
     start_time = time.time()
     if config_dict_['regularization_sweep']:
@@ -186,7 +182,7 @@ def run_regression(filtered_anndata, ctype, kfold):
     
     print(f"Running train/test fold {kfold}")
     
-    ## TODO: double check why train labelled as -1/ check main_2
+
     train_anndata = filtered_anndata[filtered_anndata.obs[f'train_test_fold_{kfold}'] == -1]
     # train_anndata = filtered_anndata[filtered_anndata.obs[f'train_test_fold_{kfold}'] == 0]
     test_anndata = filtered_anndata[filtered_anndata.obs[f'train_test_fold_{kfold}'] == 1]
@@ -310,9 +306,6 @@ def parse_args(argv: List[str]) -> dict:
     
     parser.add_argument("--MKL_NUM_THREADS", type=str, required=False, default="1",
                 help="Set number of MKL threads for Poisson regression")
-    
-    ## TODO: add the rest of the filtering criteria as user parameters
-    ## TODO: save arguments / config file in out directory 
     
     # Add help at the very end
     parser = argparse.ArgumentParser(parents=[parser], add_help=True)
@@ -446,14 +439,8 @@ if __name__ == '__main__':
             list_of_folds_pred_counts_ng_baseline = []
             list_of_folds_counts_ng = []
             list_of_folds_cell_type_ids = []
-
-            ## TODO: make num kfold / range user parameter
-            ## TODO: add in number of cores as a user parameter / don't parallelize by default
-
-            print(filtered_anndata)
             
             ## parallelize over kfolds
-
             with Pool(6) as p:
                 kfold_iterable = p.starmap(run_regression, [(filtered_anndata, ctype, 1), (filtered_anndata, ctype, 2), (filtered_anndata, ctype, 3), (filtered_anndata, ctype, 4)])
 

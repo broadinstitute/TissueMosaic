@@ -37,8 +37,6 @@ class GeneRegression:
         self._use_covariates = use_covariates
         self._param_dict = {}
     
-    ### TODO: double CHECK these methods ###
-    
     def _get_gene_list(self) -> List[str]:
         return self._train_kargs["gene_names"]
 
@@ -524,11 +522,8 @@ class GeneRegression:
 
             pred_counts_tmp_bng = mydist.sample(sample_shape=torch.Size([num_samples])).cpu()
 
-            ## TODO double check the mean statement here
             pred_counts_ng[n_left:n_right] = pred_counts_tmp_bng.mean(dim=-3).long().cpu()
-            #pred_counts_ng[n_left:n_right] = pred_counts_tmp_bng[0].long().cpu()
             
-            ## TODO double check the subtract/mean statement here
             q_ng_tmp = (pred_counts_tmp_bng - subn_counts_ng).abs().float().mean(dim=-3)
             q_ng[n_left:n_right] = q_ng_tmp.cpu()
             

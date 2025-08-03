@@ -189,8 +189,7 @@ def classify_and_regress(
     
     return df
 
-##TODO: finish this function
-def train_test_split_dict(world_dict: dict, 
+def train_test_split_dict(self, world_dict: dict, 
                           remove_overlap: bool, 
                           val_iomin_threshold: float=False,
                           stratify: bool=True,
@@ -218,8 +217,6 @@ def train_test_split_dict(world_dict: dict,
     assert {"patches_xywh", "classify_tissue_label"}.issubset(world_dict.keys())
     patches = world_dict["patches_xywh"]
     
-    print(world_dict['patches_xywh'].shape)
-    
     if remove_overlap:
         initial_score = torch.rand_like(patches[:, 0].float())
         tissue_ids = world_dict["classify_tissue_label"]
@@ -236,8 +233,6 @@ def train_test_split_dict(world_dict: dict,
                                                              possible_n=torch.ones_like(initial_score).bool())
         world_dict_subset = subset_dict(input_dict=world_dict, mask=nms_mask_n)
         world_dict = world_dict_subset
-    
-    print(world_dict['patches_xywh'].shape)
     
     ## Cluster Patch NCVs
     if stratify:
@@ -259,32 +254,17 @@ def train_test_split_dict(world_dict: dict,
         leiden_clusters = smart_leiden.cluster(resolution=res, partition_type='RBC')
         
     ## Split patches into train/test, stratifying by NCV clusters
-    ## write custom train_test_split function in utils
-    
     all_indices = np.arange(world_dict['patches_xywh'].shape[0])
 
-    train_indices, test_indices = train_test_split(all_indices, stratify=world_dict['classify_tissue_label'], random_state=random_state)
+    train_indices, test_indices = train_test_split(all_indices, stratify=world_dict['classify_tissue_label'], random_state=random_state, train_size=train_size, test_size=test_size)
 
     train_mask = torch.tensor(np.isin(all_indices, train_indices))
     test_mask = torch.tensor(np.isin(all_indices, test_indices))
     
     train_features_dict = subset_dict(world_dict, train_mask)
     test_features_dict = subset_dict(world_dict, test_mask)
-    # ##TODO: see why this isn't working as expected
-    # if stratify:
-    #     try:
-    #         train_patch_xywh, test_patch_xywh = train_test_split(self._patch_properties_dict[feature_xywh], train_size=train_size, test_size=test_size, stratify=leiden_clusters,random_state=random_state)
-    #     except ValueError: #ValueError as ve: ##TODO: specify for the appropriate exception here
-    #         # raise Exception("ValueError: " + str(ve))
-    #         raise Exception("Not enough samples in each cluster to split the data. Try a smaller res")
-    # else:
-    #     train_patch_xywh, test_patch_xywh = train_test_split(self._patch_properties_dict[feature_xywh], train_size=train_size, test_size=test_size,
-    #                                                         random_state=random_state)
         
     return train_features_dict, test_features_dict
-        
-
-    
 
 
 def knn_classification_regression(world_dict: dict, val_iomin_threshold: float):
