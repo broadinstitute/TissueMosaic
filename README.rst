@@ -145,15 +145,15 @@ TissueMosaic expects the input to be a folder of anndata objects along with a co
 
 Each anndata object should contain the following fields:
 
-1. in obs:
-- 'x': an array of shape (n_cells,) containing the x-coordinate of each spot.
-- 'y': an array of shape (n_cells,) containing the y-coordinate of each spot.
+- in obs:
+   - 'x': an array of shape (n_cells,) containing the x-coordinate of each spot.
+   - 'y': an array of shape (n_cells,) containing the y-coordinate of each spot.
 
-2. in obsm:
-- 'cell_type_proportions': an array of shape (n_cells, n_cell_types) containing the cell-type proportions for each spot.
+- in obsm:
+   - 'cell_type_proportions': an array of shape (n_cells, n_cell_types) containing the cell-type proportions for each spot.
 
-3. in uns:
-- 'status': a string indicating the external condition label of the sample.
+- in uns:
+   - 'status': a string indicating the external condition label of the sample.
 
 This information can be included under different keys, as long as you update the config file accordingly (example config files are provided in the run/ directory).
 
