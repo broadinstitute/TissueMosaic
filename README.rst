@@ -1,9 +1,16 @@
 TissueMosaic: A python library for the analysis of biological tissues
 ========================================================================
 
-![tissuemosaic_logo](https://github.com/broadinstitute/TissueMosaic/blob/master/docs/source/_static/kandisky_slideseq_strip.jpeg)
+.. image:: https://github.com/broadinstitute/TissueMosaic/blob/main/docs/source/_static/kandisky_slideseq_strip.jpeg
+  :width: 1600
+  :alt: tissuemosaic_logo
+  :align: center
 
-[![Documentation Status](https://readthedocs.org/projects/tissuemosaic/badge/?version=latest)](https://tissuemosaic.readthedocs.io/en/latest/?badge=latest)
+.. image:: https://readthedocs.org/projects/tissuemosaic/badge/?version=latest
+  :width: 100
+  :alt: documentation_status
+  :align: center
+  :target: https://tissuemosaic.readthedocs.io/en/latest/?badge=latest
    
 Description
 -----------
