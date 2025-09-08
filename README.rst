@@ -138,6 +138,31 @@ Environment 1:
 * Python = 3.11.0, CUDA = 12.1
 * Dependencies: anndata=0.10.6, leidenalg=0.9.1, lightly-1.5.1, lightning_bolts=0.7.0, matplotlib=3.8.3, neptune=1.9.1, numpy=1.26.4, pandas=1.5.3, python_igraph=0.10.4, pytorch-lightning=1.7.7, scanpy=1.9.8, scikit_learn=1.4.1, scipy=1.12.0, seaborn=0.13.2, torch=2.2.1, torchvision=0.17.1, umap_learn=0.5.5
 
+Expected Input
+----------
+
+TissueMosaic expects the input to be a folder of anndata objects along with a config file. 
+
+Each anndata object should contain the following fields:
+
+1. in obs:
+- 'x': an array of shape (n_cells,) containing the x-coordinate of each spot.
+- 'y': an array of shape (n_cells,) containing the y-coordinate of each spot.
+
+2. in obsm:
+- 'cell_type_proportions': an array of shape (n_cells, n_cell_types) containing the cell-type proportions for each spot.
+
+3. in uns:
+- 'status': a string indicating the external condition label of the sample.
+
+This information can be included under different keys, as long as you update the config file accordingly (example config files are provided in the run/ directory).
+
+If you are running TissueMosaic on your own data, take care to update the 'categories_to_channels' key in the config file. This key is used to map the cell-type labels to the channels in the image and must match the column labels of the 'cell_type_proportions' array.
+
+The main hyperparameter to adjust is the patch size. The 'global_size' and 'local_size' keys are used to specify the patch-size of the global and local crops (for Dino), where local size should be 0.5-0.75 of global size. We find empirically that global size=96 and local size=64 works well for most tissues, but this may vary depending on your particular use case. See the manuscript for additional details.
+
+You can typically leave all other hyperparameters to their default values. 
+
 How to run
 ----------
 
